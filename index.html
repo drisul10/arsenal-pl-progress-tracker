@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arsenal PL Progress Dashboard | Seasons Comparison</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #EF2A2A 0%, #BD1F1F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .bg-gradient-main {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-main text-white p-3 sm:p-5 lg:p-8 min-h-screen font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif]">
+    <div class="max-w-7xl mx-auto">
+        <header
+            class="text-center mb-6 sm:mb-10 p-4 sm:p-6 lg:p-8 bg-white/5 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10">
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl mb-2.5 gradient-text">Arsenal PL Progress Dashboard</h1>
+            <p id="subtitle" class="text-sm sm:text-base lg:text-lg text-gray-400 mt-2.5">Matchday Comparison</p>
+            <p class="text-sm sm:text-base lg:text-lg text-gray-400 mt-1">Seasons 2022/23 → 2025/26</p>
+            <p class="text-sm sm:text-base lg:text-lg text-gray-400 mt-1">(using 2025/26 match order)</p>
+            <p id="lastUpdated" class="text-xs sm:text-sm text-gray-500 mt-2"></p>
+            <p class="text-xs sm:text-sm text-gray-500 mt-2">Created by <a href="http://twitter.com/@drisul10"
+                    target="_blank" class="text-[#E62727] hover:text-[#8D1414]">Andri Sul</a></p>
+        </header>
+
+        <div id="statsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-10"></div>
+
+        <div
+            class="bg-white/5 p-4 sm:p-6 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)] bg-[rgba(239,1,7,0.1)] border-l-4 border-l-[#ef0107] my-4 sm:my-5 text-xs sm:text-sm text-red-300">
+            <strong>📌 Note:</strong> In the 2025/2026 season (Matchday 2), Leeds United replaced the rank 17 EPL team
+            as the newly promoted Championship winners (Rank 1).
+        </div>
+
+        <div
+            class="bg-white/5 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)] mb-6 sm:mb-8">
+            <h3 id="pointsChartTitle" class="text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-5 text-center">📊 Cumulative
+                Points Progress</h3>
+            <div class="h-[250px] sm:h-[350px] lg:h-[400px] relative">
+                <canvas id="pointsChart"></canvas>
+            </div>
+            <div id="pointsLegend"
+                class="flex justify-center flex-wrap gap-3 sm:gap-5 mt-4 sm:mt-5 p-3 sm:p-4 bg-black/20 rounded-lg sm:rounded-xl">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mt-6 sm:mt-8">
+            <div
+                class="bg-white/5 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)]">
+                <h3 class="text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-5 text-center">⚽ Goals Scored (GF) by Season</h3>
+                <div class="h-[250px] sm:h-[350px] lg:h-[400px] relative">
+                    <canvas id="goalsForChart"></canvas>
+                </div>
+            </div>
+
+            <div
+                class="bg-white/5 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)]">
+                <h3 class="text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-5 text-center">🛡️ Goals Conceded (GA) by Season
+                </h3>
+                <div class="h-[250px] sm:h-[350px] lg:h-[400px] relative">
+                    <canvas id="goalsAgainstChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="bg-white/5 p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)] mt-6 sm:mt-8">
+            <h3 class="text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-5 text-center">📈 Goals For vs Goals Against Comparison
+            </h3>
+            <div class="h-[250px] sm:h-[350px] lg:h-[400px] relative">
+                <canvas id="goalsComparisonChart"></canvas>
+            </div>
+        </div>
+
+        <div
+            class="bg-white/5 p-4 sm:p-6 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)] overflow-x-auto mt-6 sm:mt-8">
+            <h3 class="text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-5 text-center">🗓️ Matchday-by-Matchday Results</h3>
+            <table id="resultsTable" class="w-full border-collapse text-xs sm:text-sm"></table>
+        </div>
+
+        <div
+            class="bg-white/5 p-4 sm:p-6 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)] overflow-x-auto mt-6 sm:mt-8">
+            <h3 class="text-lg sm:text-xl lg:text-2xl mb-4 sm:mb-5 text-center">📊 Season Statistics Summary</h3>
+            <table id="summaryTable" class="w-full border-collapse text-xs sm:text-sm"></table>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store data
+        let arsenalData = null;
+        let completedMatches = [];
+        let completedMatchday = 0;
+
+        // Load data from JSON file
+        async function loadData() {
+            try {
+                const response = await fetch('./data/arsenal-data.json');
+                arsenalData = await response.json();
+
+                // Get the completed matchday first
+                completedMatchday = arsenalData.completedMatchday || 0;
+
+                // Filter matches up to completedMatchday with valid scores for all seasons
+                completedMatches = arsenalData.matches.filter(match => {
+                    // Must be within the completed matchday range
+                    if (match.matchday > completedMatchday) return false;
+
+                    // Must have valid scores for all seasons
+                    return arsenalData.seasons.every(season => {
+                        const result = match.results[season];
+                        return result && result.score && result.score !== '';
+                    });
+                });
+
+                initializeDashboard();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Initialize dashboard after data is loaded
+        function initializeDashboard() {
+            updateSubtitle();
+            updateChartTitle();
+            updateLastUpdated();
+            renderStatsGrid();
+            renderPointsLegend();
+            createCharts();
+            renderTables();
+        }
+
+        // Update subtitle with dynamic matchday range
+        function updateSubtitle() {
+            const subtitle = document.getElementById('subtitle');
+            if (completedMatchday > 0) {
+                subtitle.textContent = `Matchday 1-${completedMatchday} Comparison`;
+            }
+        }
+
+        // Update chart title with dynamic matchday range
+        function updateChartTitle() {
+            const chartTitle = document.getElementById('pointsChartTitle');
+            if (completedMatchday > 0) {
+                chartTitle.textContent = `📊 Cumulative Points Progress (Matchday 1-${completedMatchday})`;
+            }
+        }
+
+        // Update last updated timestamp
+        function updateLastUpdated() {
+            const lastUpdatedEl = document.getElementById('lastUpdated');
+            if (arsenalData.lastUpdated) {
+                const date = new Date(arsenalData.lastUpdated);
+                lastUpdatedEl.textContent = `Last updated: ${date.toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`;
+            }
+        }
+
+        // Helper Functions - using only completed matches
+        const calcStats = (season) => {
+            let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
+            completedMatches.forEach(m => {
+                const r = m.results[season];
+                goalsFor += r.arsenalGoals;
+                goalsAgainst += r.opponentGoals;
+                if (r.arsenalGoals > r.opponentGoals) wins++;
+                else if (r.arsenalGoals === r.opponentGoals) draws++;
+                else losses++;
+            });
+            return {
+                wins, draws, losses,
+                points: wins * 3 + draws,
+                goalsFor, goalsAgainst,
+                goalDifference: goalsFor - goalsAgainst
+            };
+        };
+
+        const calcCumulativePoints = (season) => {
+            let pts = 0;
+            return completedMatches.map(m => {
+                const r = m.results[season];
+                if (r.arsenalGoals > r.opponentGoals) pts += 3;
+                else if (r.arsenalGoals === r.opponentGoals) pts += 1;
+                return pts;
+            });
+        };
+
+        const getResultClass = (ag, og) =>
+            ag > og ? 'positive' : ag === og ? 'neutral' : 'negative';
+
+        const getResultText = (ag, og) =>
+            ag > og ? 'W' : ag === og ? 'D' : 'L';
+
+        // Render Stats Grid
+        function renderStatsGrid() {
+            document.getElementById('statsGrid').innerHTML = arsenalData.seasons.map(s => {
+                const st = calcStats(s);
+                return `
+                    <div class="bg-white/5 p-4 sm:p-6 rounded-xl sm:rounded-2xl backdrop-blur-[10px] border border-white/10 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(239,1,7,0.3)]">
+                        <div class="text-xs sm:text-sm text-gray-400 mb-2 sm:mb-2.5 uppercase tracking-wider">
+                            <span class="inline-block w-[12px] h-[12px] sm:w-[15px] sm:h-[15px] rounded mr-2 align-middle" style="background: ${arsenalData.colors[s]};"></span>${s}
+                        </div>
+                        <div class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1">${st.points} pts</div>
+                        <div class="text-gray-400 text-xs sm:text-sm">
+                            GF: ${st.goalsFor} | GA: ${st.goalsAgainst} | GD: ${st.goalDifference >= 0 ? '+' : ''}${st.goalDifference}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render Points Legend
+        function renderPointsLegend() {
+            document.getElementById('pointsLegend').innerHTML = arsenalData.seasons.map(s =>
+                `<div class="flex items-center text-xs sm:text-sm">
+                    <span class="inline-block w-[12px] h-[12px] sm:w-[15px] sm:h-[15px] rounded mr-2 align-middle" style="background: ${arsenalData.colors[s]};"></span>
+                    ${s} (${calcStats(s).points} pts)
+                </div>`
+            ).join('');
+        }
+
+        // Create all charts
+        function createCharts() {
+            // Chart Configuration
+            const chartConfig = {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { left: 10, right: 10, top: 20, bottom: 10 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)', offset: true },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grace: '5%',
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            };
+
+            // Bar Chart Configuration (for bar charts)
+            const barChartConfig = {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { left: 10, right: 10, top: 20, bottom: 10 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)', offset: false },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grace: '5%',
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            };
+
+            // Points Chart
+            const matchdayLabels = completedMatches.map(m => `MD${m.matchday}`);
+
+            new Chart(document.getElementById('pointsChart'), {
+                type: 'line',
+                data: {
+                    labels: matchdayLabels,
+                    datasets: arsenalData.seasons.map(s => ({
+                        label: s,
+                        data: calcCumulativePoints(s),
+                        borderColor: arsenalData.colors[s],
+                        backgroundColor: arsenalData.colors[s] + '20',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }))
+                },
+                options: chartConfig
+            });
+
+            const goalsForData = arsenalData.seasons.map(s => calcStats(s).goalsFor);
+            const goalsAgainstData = arsenalData.seasons.map(s => calcStats(s).goalsAgainst);
+
+            // Goals For Chart
+            new Chart(document.getElementById('goalsForChart'), {
+                type: 'bar',
+                data: {
+                    labels: arsenalData.seasons,
+                    datasets: [{
+                        label: 'Goals Scored',
+                        data: goalsForData,
+                        backgroundColor: arsenalData.seasons.map(s => arsenalData.colors[s] + 'CC'),
+                        borderColor: arsenalData.seasons.map(s => arsenalData.colors[s]),
+                        borderWidth: 2
+                    }]
+                },
+                options: barChartConfig
+            });
+
+            // Goals Against Chart
+            new Chart(document.getElementById('goalsAgainstChart'), {
+                type: 'bar',
+                data: {
+                    labels: arsenalData.seasons,
+                    datasets: [{
+                        label: 'Goals Conceded',
+                        data: goalsAgainstData,
+                        backgroundColor: arsenalData.seasons.map(s => arsenalData.colors[s] + '80'),
+                        borderColor: arsenalData.seasons.map(s => arsenalData.colors[s]),
+                        borderWidth: 2
+                    }]
+                },
+                options: barChartConfig
+            });
+
+            // Goals Comparison Chart
+            new Chart(document.getElementById('goalsComparisonChart'), {
+                type: 'bar',
+                data: {
+                    labels: arsenalData.seasons,
+                    datasets: [
+                        {
+                            label: 'Goals For',
+                            data: goalsForData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: '#10b981',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Goals Against',
+                            data: goalsAgainstData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderColor: '#ef4444',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    ...barChartConfig,
+                    plugins: {
+                        ...barChartConfig.plugins,
+                        legend: { display: true, labels: { color: '#fff', padding: 15 } }
+                    }
+                }
+            });
+        }
+
+        // Render Tables
+        function renderTables() {
+            // Render Results Table - only showing completed matches
+            document.getElementById('resultsTable').innerHTML = `
+                <thead><tr>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Matchday</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Opponent</th>
+                    ${arsenalData.seasons.map(s => `<th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">${s}</th>`).join('')}
+                </tr></thead>
+                <tbody>${completedMatches.map(m => `
+                    <tr class="hover:bg-white/5">
+                        <td class="p-2 sm:p-3 text-center border-b border-white/10">${m.matchday}</td>
+                        <td class="p-2 sm:p-3 text-center border-b border-white/10 whitespace-nowrap">${m.opponent} (${m.venue})</td>
+                        ${arsenalData.seasons.map(s => {
+                const r = m.results[s];
+                const resultClass = r.arsenalGoals > r.opponentGoals ? 'text-emerald-500 font-semibold' :
+                    r.arsenalGoals === r.opponentGoals ? 'text-amber-500 font-semibold' :
+                        'text-red-500 font-semibold';
+                return `<td class="p-2 sm:p-3 text-center border-b border-white/10 ${resultClass}">${r.score} (${getResultText(r.arsenalGoals, r.opponentGoals)})</td>`;
+            }).join('')}
+                    </tr>
+                `).join('')}</tbody>
+            `;
+
+            // Render Summary Table
+            document.getElementById('summaryTable').innerHTML = `
+                <thead><tr>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Season</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Wins</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Draws</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Losses</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">Points</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">GF</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">GA</th>
+                    <th class="p-2 sm:p-3 text-center border-b border-white/10 bg-[rgba(239,1,7,0.2)] font-semibold uppercase tracking-wider text-[0.7em] sm:text-[0.85em]">GD</th>
+                </tr></thead>
+                <tbody>${arsenalData.seasons.map(s => {
+                const st = calcStats(s);
+                return `
+                        <tr class="hover:bg-white/5">
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10 font-semibold whitespace-nowrap" style="color: ${arsenalData.colors[s]};">${s}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10 text-emerald-500 font-semibold">${st.wins}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10">${st.draws}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10">${st.losses}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10 text-emerald-500 font-semibold">${st.points}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10">${st.goalsFor}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10">${st.goalsAgainst}</td>
+                            <td class="p-2 sm:p-3 text-center border-b border-white/10 text-emerald-500 font-semibold">${st.goalDifference >= 0 ? '+' : ''}${st.goalDifference}</td>
+                        </tr>
+                    `;
+            }).join('')}</tbody>
+            `;
+        }
+
+        // Load data when page loads
+        loadData();
+    </script>
+</body>
+
+</html>
